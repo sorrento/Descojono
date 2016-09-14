@@ -8,98 +8,97 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.speech.tts.Voice;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.parse.FindCallback;
 import com.parse.ParseException;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String PREFS_MODE = "mode";
-    private static final String PREFS_MODE_MUSIC = "music";
-    private static final String PREFS_LAST_CHAPTER = "last chapter";
-    private static final String PREFS_LAST_BOOK = "last book";
-    private static final String PREFS_FIRST_TIME = "first time";
+//    private static final String PREFS_LAST_CHAPTER = "last chapter";
+//    private static final String PREFS_FIRST_TIME = "first time";
 
     private static final String COURTESY = "courtesy";
     private static final String LIKE = "like";
     private static final String PLAYPAUSE = "playpause";
     private static final String NEXT = "next";
     private static final String STOP = "stop";
-    private static final String MUSICBOOK = "musicBook";
     private static final String SHARETEXT = "shareText";
     private static final String SHAREAUDIO = "shareAudio";
+    private static final String UTTEHM = "ayayayyy";
+    private static final String UTTRISA = "risa";
 
     final private String samsungEngine = "com.samsung.SMT";
     TextToSpeech t1;
-    //    boolean entireBookMode = false;
-    boolean musicMode = false;
-    private String tag = "mhp";
 
-    //    private Chapter currentChiste;
-//    private List<Chapter> chistesPreLoaded;
+    private String tag = "mhp";
+    private String tagW = "WAS";
+    private String tag2 = "ACT";
 
     private List<Chiste> chistesPreLoaded;
-    private TextView txtText;
-    private TextView txtDesc;
-    private Button btnPlayStop;
 
     private boolean interrupted = false;
     private int iBuffer = 0;
-    private int lastBook;
-    private int lastChapter;
-    private SharedPreferences settings;
     private int nextQueueMode;
-    private Button btnNext;
-    private Button btnLike;
     private NotificationManager mNotificationManager;
     private BroadcastReceiver eventsReceiver;
-    //    private BookSummary currentBook;
-    private String tag2 = "ACT";
-    private Chiste currentChiste;
 
+    private Chiste currentChiste;
     private boolean isShowingLyricsNotification = false;
-    private String tagW = "WAS";
     private String destFileName;
-    private TextToSpeech t2;
     private String uttsavingFile = "savingFile";
 
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        this.unregisterReceiver(eventsReceiver);
+//        settings.edit().putBoolean(PREFS_MODE, entireBookMode).commit();
+//        settings.edit().putBoolean(PREFS_MODE_MUSIC, musicMode).commit();
+
+        removeLyricNotification();
+        t1.shutdown();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        myLog.initialize();
+        myLog.initialize("LOG_DESCO");
+
+        destFileName = (Environment.getExternalStorageDirectory()
+                .getAbsolutePath() + "/Download") + "/" + "tts_file.wav";//TODO remove audio file
+
 
         mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-//        enginePackageName	String: The package name for the synthesis engine (e.g. "com.svox.pico")
-
-
         t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
+                myLog.add(tag, "status=" + status);
 
                 if (status != TextToSpeech.ERROR) {
 
@@ -109,9 +108,11 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onInit(int status) {
                             if (status != TextToSpeech.ERROR) {
+                                setSpeakLanguage("ES", t1);
+
                                 t1.setOnUtteranceProgressListener(new uListener());
 
-                                getRandomChaptersAndPlay(10);
+                                getRandomChistesAndPlay(10);
 
                             }
                         }
@@ -128,7 +129,6 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(NEXT);
         filter.addAction(PLAYPAUSE);
         filter.addAction(STOP);
-        filter.addAction(MUSICBOOK);
         filter.addAction(SHARETEXT);
         filter.addAction(SHAREAUDIO);
         this.registerReceiver(eventsReceiver, filter);
@@ -168,14 +168,14 @@ public class MainActivity extends AppCompatActivity {
 
         //STOP
         if (speaking) {
-            btnPlayStop.setText("PLAY");
+//            btnPlayStop.setText("PLAY");
             interrupted = true;
             t1.stop();
             myLog.add(tag, "        ***after pressing. Speaking?" + t1.isSpeaking());
 
             //PLAY
         } else {
-            btnPlayStop.setText("STOP");
+//            btnPlayStop.setText("STOP");
 
             playCurrentChapter();
         }
@@ -190,18 +190,96 @@ public class MainActivity extends AppCompatActivity {
         } else {
             myLog.add(tag, "----> MANDADO: " + currentChiste.firstLine());
 
-            //TODO cambiar sólo si es distinto
-//            setSpeakLanguage(currentChapter.getLanguage(), t1);
+            final String risa = getRisa();
+
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                myLog.add("TTS", "next chapter speaking with voice:" + t1.getVoice().toString());
+
+                t1.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, uListener.UTTSILENCE);
                 t1.speak(currentChiste.getProcessedText(), nextQueueMode, null, currentChiste.firstLine());
+                t1.speak(risa, TextToSpeech.QUEUE_ADD, null, UTTRISA);
+
 
             } else {
                 HashMap<String, String> map = new HashMap<>();
+
+
                 map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, currentChiste.firstLine());
                 t1.speak(currentChiste.getProcessedText(), nextQueueMode, map);
+
+                map.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, UTTRISA);
+                t1.speak(risa, TextToSpeech.QUEUE_ADD, map);
             }
+        }
+    }
+
+    private String getRisa() {
+
+        String risa;
+
+        if (getProbability(0.33)) {
+
+            final ArrayList<String> risas = new ArrayList<>();
+            risas.add("Ahhh, Es que me parto.");
+            risas.add("Ja ja ja, qué bueno.");
+            risas.add("oj oj oj parto pecho");
+            risas.add("jaaaa jaaa me meo");
+            risas.add("En realidad no tiene gracia.");
+            risas.add("Je je, es muy malo.");
+            risas.add("ja ja ¡Pero quién coño los inventa!");
+            risas.add("Qué risa, Felisa");
+            risas.add("jaaa jaaa jaaa, me descojono");
+            risas.add("jojojó, me rompo.");
+            risas.add("ayyy, qué salá qué soy");
+
+            final int iChiste = new Random().nextInt(risas.size());
+            risa = risas.get(iChiste);
+        } else {
+            risa = UTTEHM;
+        }
+        myLog.add(tag, "risa es:" + risa);
+        return risa;
+    }
+
+    /**
+     * Entrega TRUE conuna probabilidad de v
+     *
+     * @param v
+     * @return
+     */
+    private boolean getProbability(double v) {
+        final int i = new Random().nextInt(100 + 1);
+        myLog.add(tag, "valor random:" + i);
+
+        return i <= 100 * v;
+    }
+
+    private void setSpeakLanguage(String lan, TextToSpeech t) {
+        myLog.add(tag, "Setting Language:" + lan);
+        //todo elegir el motor y las voces una sola vez, al inicio
+
+        switch (lan) {
+            case "ES":
+                Locale spanish = new Locale("es", "ES");
+                t.setLanguage(spanish);
+                break;
+
+            case "EN":
+                t.setLanguage(Locale.US);
+
+                //Select voice
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                    Set<Voice> voices = t.getVoices();
+                    for (Voice voice : voices) {
+                        // if (voice.getName().equals("en-US-SMTl01")) {
+                        if (voice.getQuality() == 400 && voice.getLocale() == Locale.US) {
+                            myLog.add(tag, "voice set to: " + voice.toString());
+                            t.setVoice(voice);
+                            break;
+                        }
+                    }
+                }
+                break;
         }
     }
 
@@ -210,25 +288,20 @@ public class MainActivity extends AppCompatActivity {
         myLog.add(tag, "*********PRESSED NEXT");
 
         //block button 2 secons
-        btnNext.setEnabled(false);
-        btnNext.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                btnNext.setEnabled(true);
-            }
-        }, 2000);
+//        btnNext.setEnabled(false);
+//        btnNext.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                btnNext.setEnabled(true);
+//            }
+//        }, 2000);
 
         myLog.add(tag, "..Playnext porque cluckedNext");
 
-        if (!btnLike.isEnabled()) btnLike.setEnabled(true);
+//        if (!btnLike.isEnabled()) btnLike.setEnabled(true);
 
-        if (musicMode) {
-            //avanzamos en el buffer y luego saltanos
-            playNext();
-        } else {
-//            courtesyMessage("Vaya, no te ha gustado. Veamos otra cosa...");
-            getRandomChaptersAndPlay(10);
-        }
+        //avanzamos en el buffer y luego saltanos
+        playNext();
     }
 
     /**
@@ -250,17 +323,14 @@ public class MainActivity extends AppCompatActivity {
     public void setCurrentChapter(final Chiste currentChapter) {
         this.currentChiste = currentChapter;
 
-        settings.edit().putInt(PREFS_LAST_CHAPTER, currentChapter.getChapterId()).commit();
-
-
-        this.runOnUiThread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        txtText.setText(currentChapter.getText());
-                        txtDesc.setText(currentChapter.toString());
-                    }
-                });
+//        this.runOnUiThread(
+//                new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        txtText.setText(currentChapter.getText());
+//                        txtDesc.setText(currentChapter.toString());
+//                    }
+//                });
     }
 
     /**
@@ -272,16 +342,17 @@ public class MainActivity extends AppCompatActivity {
     private void getChapterAndPlay(final int iChapter, final int bufferSize, final boolean local) {
 //        currentBook = bookSummary;
 
+        myLog.add(tag, "getChapterAndPlay:local " + local + " desde chiste numero:" + iChapter);
         parseHelper.getChistes(iChapter, bufferSize, local, new FindCallback<Chiste>() {
             @Override
-            public void done(List<Chiste> chapters, ParseException e) {
+            public void done(List<Chiste> chistes, ParseException e) {
                 if (e == null) {
-                    myLog.add(tag2, "--- Traidos capitulos:" + chapters.size() + "desde local?" + local);
+                    myLog.add(tag2, "--- Traidos capitulos:" + chistes.size() + "desde local?" + local);
 
-                    if (chapters.size() > 0) {
-                        setCurrentChapter(chapters.get(0));
+                    if (chistes.size() > 0) {
+                        setCurrentChapter(chistes.get(0));
                         iBuffer = 0;
-                        chistesPreLoaded = chapters;
+                        chistesPreLoaded = chistes;
                         playCurrentChapter();
 
                     } else {
@@ -312,13 +383,14 @@ public class MainActivity extends AppCompatActivity {
 //        parseHelper.getBookSummary(iBook, local, cb);
     }
 
-    private void getRandomChaptersAndPlay(final int nChistes) {
+    private void getRandomChistesAndPlay(final int nChistes) {
 
         if (isOnline()) {
 
             final int nTotalChistes = 354;
             final int iChiste = new Random().nextInt(nTotalChistes + 1);
 
+            myLog.add(tag, "+++ el random pra traer es:" + iChiste);
 //                    BookContability.incrementJumpedInBook(bookSummary); TODO MARCAR libro por visita
 
             getChapterAndPlay(iChiste, nChistes, false);
@@ -385,17 +457,6 @@ public class MainActivity extends AppCompatActivity {
 ////        }
     }
 
-    private void onClickMusicBook() {
-        musicMode = !musicMode;
-
-//        onClickNext(null);
-        interrupted = true;
-        myLog.add(tag, "*********PRESSED CHANGE MODE TO MUSIC:" + musicMode);
-
-        getRandomChaptersAndPlay(10);
-
-    }
-
     private void showMediaNotification() {
 
         Intent like = new Intent(LIKE);
@@ -410,26 +471,23 @@ public class MainActivity extends AppCompatActivity {
         Intent stop = new Intent(STOP);
         PendingIntent stopPendingIntent = PendingIntent.getBroadcast(this, 1, stop, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Intent musicBook = new Intent(MUSICBOOK);
-        PendingIntent musicBookPendingIntent = PendingIntent.getBroadcast(this, 1, musicBook, PendingIntent.FLAG_UPDATE_CURRENT);
 
         int iconPlayPause = t1.isSpeaking() ? android.
                 R.drawable.ic_media_pause : android.R.drawable.ic_media_play;
 //        int iconMusicBook = musicMode ? R.drawable.ic_book : R.drawable.ic_music_note_white_24dp;
         int iconMusicBook = android.R.drawable.ic_media_ff;
 
-        String title = "chiste";
+        String title = "Chiste";
         String content = currentChiste.getType();
 
         Notification notification = new NotificationCompat.Builder(this)
                 // Show controls on lock screen even when user hides sensitive content.
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setSmallIcon(android.R.drawable.ic_media_play)
-                // Add media control buttons that invoke intents in your media service
+                        // Add media control buttons that invoke intents in your media service
                 .addAction(android.R.drawable.ic_media_rew, "Previous", likePendingIntent) // #0
                 .addAction(iconPlayPause, "Pause", playPendingIntent)  // #1
                 .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent)     // #2
-                .addAction(iconMusicBook, "MusicBook", musicBookPendingIntent)     // #3
 //                        // Apply the media style template
                 .setStyle(new NotificationCompat.MediaStyle()
                                 .setShowActionsInCompactView(1 /* #1: pause button */)
@@ -460,7 +518,7 @@ public class MainActivity extends AppCompatActivity {
                 // Show controls on lock screen even when user hides sensitive content.
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setSmallIcon(android.R.drawable.ic_media_play) //TODO poner icono de musica
-                // Add media control buttons that invoke intents in your media service
+                        // Add media control buttons that invoke intents in your media service
 //                .addAction(android.R.drawable.ic_media_rew, "Previous", likePendingIntent) //todo poner boton paa wasap
 
                 .setStyle(new android.support.v4.app.NotificationCompat.BigTextStyle()
@@ -473,7 +531,7 @@ public class MainActivity extends AppCompatActivity {
 //                .setSubText(currentChapter.getChapterId() + "/" + currentBook.nChapters())
 //                .setLargeIcon(currentBook.getImageBitmap())
 //                .setTicker(currentBook.getTitle() + "\n" + currentBook.fakeAuthor())
-                // actions
+                        // actions
                 .addAction(android.R.drawable.ic_media_next, "TEXT", pendingIntentText)
                 .addAction(android.R.drawable.ic_media_previous, "AUDIO", pendingIntentAudio)
                 .build();
@@ -514,12 +572,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void shareLyricWhatsapp(final String text, boolean audio) {
+    public void shareLyricWhatsapp(final boolean audio) {
 
         if (audio) {
 
             interrupted = true;
             t1.stop();
+
+            String text = currentChiste.getTextForAudio();
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 Toast.makeText(MainActivity.this, "Preparando la voz para enviar...", Toast.LENGTH_SHORT).show();
@@ -535,16 +595,18 @@ public class MainActivity extends AppCompatActivity {
 
 
         } else { //TEXTO
+            final String text = currentChiste.getFormatedText() +
+                    "_____\n" + "\nEnviado por *Descojono*";
 
             Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
             whatsappIntent.setPackage("com.whatsapp");
-
             whatsappIntent.setType("text/plain");
-            whatsappIntent.putExtra(Intent.EXTRA_TEXT, text + "\n _Sent by Metal Poetry_");
+            whatsappIntent.putExtra(Intent.EXTRA_TEXT, text);
 
             sendWhatsappIntent(whatsappIntent);
 
         }
+
 
     }
 
@@ -555,11 +617,7 @@ public class MainActivity extends AppCompatActivity {
         myLog.add(tag, "en playNext, ibffer = " + iBuffer);
 
         if (chistesPreLoaded == null || iBuffer + 1 == chistesPreLoaded.size()) { //Traer los siguientes
-            if (currentChiste == null) {
-                getRandomChaptersAndPlay(10);
-            } else {
-                getChapterAndPlay(currentChiste.getChapterId(), 10, true);
-            }
+            getRandomChistesAndPlay(10);
 
         } else {
 
@@ -571,10 +629,15 @@ public class MainActivity extends AppCompatActivity {
             playCurrentChapter();
         }
 
+    }
 
+    private interface StringCallback {
+        void onDone(String[] versos);
     }
 
     class uListener extends UtteranceProgressListener {
+
+        private static final String UTTSILENCE = "silence";
 
         @Override
         public void onStart(String utteranceId) {
@@ -585,17 +648,17 @@ public class MainActivity extends AppCompatActivity {
 
             showMediaNotification();
             //notificación con la letra
-            if (musicMode && !utteranceId.equals(COURTESY)) {
+            if (!utteranceId.equals(COURTESY)) {
                 showLyricsNotification();
                 isShowingLyricsNotification = true;
             }
 
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    btnPlayStop.setText("STOP");
-                }
-            });
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    btnPlayStop.setText("STOP");
+//                }
+//            });
         }
 
         @Override
@@ -609,8 +672,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-            if (utteranceId.equals(COURTESY)) {
-                nextQueueMode = TextToSpeech.QUEUE_FLUSH;
+            if (utteranceId.equals(UTTSILENCE) || utteranceId.equals(UTTEHM)) {
 
             } else if (utteranceId.equals(uttsavingFile)) {
                 myLog.add(tagW, "terminado de guardar el archivo, vamos a mandar el intent");
@@ -626,17 +688,17 @@ public class MainActivity extends AppCompatActivity {
                 whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
                 sendWhatsappIntent(whatsappIntent);
+            } else if (utteranceId.equals(UTTRISA)) {
+                myLog.add(tag, "Ha finalizado, " + utteranceId + " por lo que ponemos el siguiente");
+                playNext();
 
             } else {
                 if (interrupted) {
                     myLog.add(tag, "se ha interrumpido, no ponemos otro");
-                    showMediaNotification();
+                    showMediaNotification(); //Para cambiar el boton
                     interrupted = false;
 
                     //termino de contar la el chapter
-                } else {
-                    myLog.add(tag, "Ha finalizado, " + utteranceId + " por lo que ponemos el siguiente");
-                    playNext();
                 }
             }
         }
@@ -668,19 +730,16 @@ public class MainActivity extends AppCompatActivity {
                     case NEXT:
                         onClickNext(null);
                         break;
-                    case MUSICBOOK:
-//                        onClickMusicBook();
-//                        break;
                     case STOP:
                         t1.stop();
                         finish();
                         break;
                     case SHARETEXT:
                         //TODO select the text to share
-                        shareLyricWhatsapp(currentChiste.getText(), false);
+                        shareLyricWhatsapp(false);
                         break;
                     case SHAREAUDIO:
-                        shareLyricWhatsapp(currentChiste.getText(), true);
+                        shareLyricWhatsapp(true);
                         break;
                 }
             } catch (Exception e) {

@@ -1,0 +1,16 @@
+
+- boton single es next?
+- que no repita chistes
+
+- repasar los titulos de las notif
+
+poner icono app
+poner icons botones
+iconons media
+
+poder elegir chistes favs
+tener la lista de favs
+
+imagen para tipo de chiste
+
+ver si comprimir el audio

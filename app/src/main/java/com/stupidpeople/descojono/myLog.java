@@ -22,9 +22,10 @@ import java.util.Set;
 public class myLog {
     private static boolean initialized = false;
     private static String currentDateandTime;
-    private static String folder = "/CUELOG/";
+    private static String folder;
 
-    public static void initialize() {
+    public static void initialize(String folderName) {
+        folder = "/" + folderName + "/";
 
         if (initialized) return;
         initialized = true;
