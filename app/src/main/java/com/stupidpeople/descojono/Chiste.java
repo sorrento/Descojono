@@ -11,23 +11,30 @@ import java.util.Arrays;
 @ParseClassName("chistes")
 public class Chiste extends ParseObject {
     static String processForReading(String t) {
-        t = t.replaceAll(" —", ", ");
-        t = t.replaceAll("—", "");
-        t = t.replaceAll("-", "");//TODo cambiar por expresion regular que comprueba que viene una palabra
-        t = t.replaceAll("–¿", "¿");
-        t = t.replaceAll("–¡", "¡");
+        myLog.add("ree", "before:" + t);
+
+        t = t.replaceAll("^(-|—|–) ?(¿|\\w+¡|)", "$2"); //al inicio con guion
+        t = t.replaceAll("\\n ?(-|—|–) ?(¿|\\w+¡|)", "\n$2"); //principio de linea con guion
+        t = t.replaceAll("¡", "");
+        t = t.replaceAll("(\\w+)\\n", "$1.\\n"); //punto al final de la línea
+
         t = t.replaceAll("No\\.", "No . ");
+        t = t.replaceAll("no\\.", "No . ");
         t = t.replaceAll("pie", "píe");
         t = t.replaceAll("local", "lokal");
         t = t.replaceAll("normal", " noormal");
+
         t = t.replaceAll("<<", "");
         t = t.replaceAll(">>", "");
         t = t.replaceAll("\\.\\.\\.\\.", "...");
         t = t.replaceAll("\\.\\.", ".");
         t = t.replaceAll(":\\.", ".");
         t = t.replaceAll("’", "");
-        myLog.add("ree", "before:" + t);
-        t = t.replaceAll("- |-\\w+", "$1");
+
+        t = t.replaceAll("Patxi", "Páchi");
+
+
+
         myLog.add("ree", "   after:" + t);
 
         return t;
@@ -90,5 +97,47 @@ public class Chiste extends ParseObject {
         String[] versos = getText().split("\n");
 
         return "_" + Chiste.joinVersos(versos, "_\n_");
+    }
+
+    public String NotifTitle() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getChisteId() + "/");
+
+        final String title = getTitle();
+
+        if (title != null && title != "") {
+            sb.append(title);
+
+        } else {
+            final String type = getType();
+
+            if (type != null && type != "") {
+                sb.append(type);
+            } else {
+                sb.append(firstLine());
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private String getTitle() {
+        return getString("titulo");
+    }
+
+    public String NotifSubTitle() {
+        return getType();
+    }
+
+    public String NotifSubText() {
+        return firstLine();
+    }
+
+    public Boolean getContado() {
+        return getBoolean("contado");
+    }
+
+    public void setContado(boolean b) {
+        put("contado", b);
     }
 }

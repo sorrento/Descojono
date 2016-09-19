@@ -1,7 +1,24 @@
+- corta el chiste EL AUDIO
+- quitar el delay?
+ en audio poner la risa
+
+- el wasap tiene que salir de donde esté (si se esta mostrando
+
+- load sytems:
+- titulo del chiste
+- se interrumpe el audio
+
+- que el wasap empiece
+- exclamacion iz. guion por pnto
+lista de reproducción (pasados
+
+
+- leer interludio desde internet
+- whatsapp co npublicidad
 
 - boton single es next?
 - que no repita chistes
-
+- elegitr la o las voces al encender
 - repasar los titulos de las notif
 
 poner icono app
@@ -14,3 +31,37 @@ tener la lista de favs
 imagen para tipo de chiste
 
 ver si comprimir el audio
+
+- quitar el flag keyguard
+
+- notificacion de media sea quieta
+
+
+
+wsTexto |ws Audio
+anter | repetir | like
+
+ .- el texto: notificacion aparace y dedaparace
+.- aun dice "numero"
+
+- chiste anterior
+- falla el mandar audio por wasp
+
+- repetir chiste
+
+
+- una sola version
+- esconder notificacion
+- poner en primer plano la app
+
+- saltar keyguard
+
+
+- dos voces
+- a veces dice "guión"
+
+- selección de tipo de chiste
+- que no se repitan, que "gire"
+- text
+
+patxi

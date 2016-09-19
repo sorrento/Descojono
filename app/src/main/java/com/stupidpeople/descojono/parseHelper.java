@@ -1,13 +1,25 @@
 package com.stupidpeople.descojono;
 
+import android.content.Context;
+import android.widget.Toast;
+
+import com.parse.DeleteCallback;
 import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.SaveCallback;
+
+import java.util.List;
+
+import static com.stupidpeople.descojono.utils.isOnline;
 
 /**
  * Created by Milenko on 30/08/2016.
  */
 public class parseHelper {
 
+    public static final String PINCENTENA = "pincentena";
     final private static String tag = "PARSE";
     private static String PINBOOK = "pinBook";
 
@@ -78,5 +90,93 @@ public class parseHelper {
 //        });
 //    }
 
+    /**
+     * Borramos los chistes en local, traemos 100 desde internet y los guuardamos en local
+     *
+     * @param centena
+     * @param cb
+     */
+    public static void importChistes(final int centena, Context ctx, final TaskCallback cb) {
 
+        final FindCallback<Chiste> findCallback = new FindCallback<Chiste>() {
+            @Override
+            public void done(List<Chiste> objects, ParseException e) {
+                if (e == null) {
+
+                    //3. Los guardamos en local
+                    ParseObject.pinAllInBackground(PINCENTENA, objects, new SaveCallback() {
+                        @Override
+                        public void done(ParseException e) {
+                            if (e == null) {
+                                cb.onDone();
+                            } else {
+                                cb.onError(e, "al borrar del pin los 100");
+                            }
+                        }
+                    });
+
+                } else {
+                    cb.onError(e, "al traer los 100 chistes");
+                }
+            }
+        };
+
+
+        if (isOnline(ctx)) {
+            // 1. Quitamos los que están en local
+            ParseObject.unpinAllInBackground(PINCENTENA, new DeleteCallback() {
+                @Override
+                public void done(ParseException e) {
+                    if (e == null) {
+                        // 2. Traemos los correspondientes 100
+                        getChistes(100 * centena + 1, 100, false, findCallback);
+
+                    } else {
+                        cb.onError(e, "al borrar del pin los 100");
+                    }
+                }
+            });
+
+        } else {
+            Toast.makeText(ctx, "Sin internet sólo me sé chistes malos...", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
+
+    public static void load20chistesrandomDesdeLocal(FindCallback<Chiste> callback) {
+        ParseQuery<Chiste> q = ParseQuery.getQuery(Chiste.class);
+        q.whereNotEqualTo("contado", true);
+        q.setLimit(20);
+        q.orderByAscending("objectId");
+        q.fromPin(PINCENTENA);
+        q.findInBackground(callback);
+    }
+
+    /**
+     * Guarda de nuevo en local, pero ponienod la etiqueta de que están leídos
+     *
+     * @param chistesPreLoaded
+     * @param readedCB
+     */
+    public static void saveTheReaded(List<Chiste> chistesPreLoaded, final TaskCallback readedCB) {
+        myLog.add(tag, "vamos a marcar como leidos los chistes");
+
+        if (chistesPreLoaded == null) {
+            myLog.add(tag, " no hay para marcar");
+            return;
+        }
+
+        ParseObject.pinAllInBackground(PINCENTENA, chistesPreLoaded, new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e == null) {
+                    readedCB.onDone();
+                } else {
+                    readedCB.onError(e, "on pinning as leidos");
+                }
+
+            }
+        });
+    }
 }
