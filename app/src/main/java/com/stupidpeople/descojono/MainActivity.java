@@ -13,6 +13,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
@@ -23,6 +25,7 @@ import android.widget.Toast;
 
 import com.parse.FindCallback;
 import com.parse.ParseException;
+import com.parse.SaveCallback;
 
 import java.io.File;
 import java.util.HashMap;
@@ -35,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_FIRST_TIME = "first time";
     private static final String PREFS_CURRENT_CENTENA = "centena";
     private static final String LIKE = "like";
-//    private static final String PREFS_FIRST_TIME = "first time";
+
     private static final String PLAYPAUSE = "playpause";
     private static final String NEXT = "next";
     private static final String STOP = "stop";
@@ -58,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver eventsReceiver;
 
     private Chiste currentChiste;
-    private boolean isShowingLyricsNotification = false;
+    private boolean isShowingTextNotification = false;
     private String destFileName;
     private String uttsavingFile = "savingFile";
     private Intent mIntentWhatsApp;
@@ -99,16 +102,8 @@ public class MainActivity extends AppCompatActivity {
 
                                 t1.setOnUtteranceProgressListener(new uListener());
 
-//                                getRandomChistesAndPlay(10);
-
-                                if (isFirstTime()) {
-                                    // Importa y cuenta
-                                    importaYCuenta();
-                                } else {
-                                    // cuenta desde el local
-                                    cuentaDesdeLocal();
-                                }
-
+                                if (isFirstTime()) importaYCuenta();
+                                else cuentaDesdeLocal();
                             }
                         }
                     }, engine);
@@ -143,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
         this.unregisterReceiver(eventsReceiver);
         settings.edit().putBoolean(PREFS_FIRST_TIME, false).apply();
 
-        removeLyricNotification();
+        removeTextNotification();
         removeMediaNotification();
         t1.shutdown();
 
@@ -432,8 +427,6 @@ public class MainActivity extends AppCompatActivity {
 
         int iconPlayPause = t1.isSpeaking() ? android.
                 R.drawable.ic_media_pause : android.R.drawable.ic_media_play;
-//        int iconMusicBook = musicMode ? R.drawable.ic_book : R.drawable.ic_music_note_white_24dp;
-        int iconMusicBook = android.R.drawable.ic_media_ff;
 
         final String title = currentChiste.NotifTitle();
         final String content = currentChiste.NotifSubTitle();
@@ -443,7 +436,7 @@ public class MainActivity extends AppCompatActivity {
                 // Show controls on lock screen even when user hides sensitive content.
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setSmallIcon(android.R.drawable.ic_media_play)
-                        // Add media control buttons that invoke intents in your media service
+                // Add media control buttons that invoke intents in your media service
                 .addAction(android.R.drawable.ic_media_rew, "Previous", likePendingIntent) // #0
                 .addAction(iconPlayPause, "Pause", playPendingIntent)  // #1
                 .addAction(android.R.drawable.ic_media_next, "Next", nextPendingIntent)     // #2
@@ -465,7 +458,7 @@ public class MainActivity extends AppCompatActivity {
         mNotificationManager.notify(1, notification);
     }
 
-    private void showLyricsNotification() {
+    private void showTextNotification() {
 
         Intent shareText = new Intent(SHARETEXT);
         PendingIntent pendingIntentText = PendingIntent.getBroadcast(this, 1, shareText, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -477,7 +470,7 @@ public class MainActivity extends AppCompatActivity {
                 // Show controls on lock screen even when user hides sensitive content.
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setSmallIcon(android.R.drawable.ic_media_play) //TODO poner icono de musica
-                        // Add media control buttons that invoke intents in your media service
+                // Add media control buttons that invoke intents in your media service
 //                .addAction(android.R.drawable.ic_media_rew, "Previous", likePendingIntent) //todo poner boton paa wasap
 
                 .setStyle(new android.support.v4.app.NotificationCompat.BigTextStyle()
@@ -490,7 +483,7 @@ public class MainActivity extends AppCompatActivity {
 //                .setSubText(currentChapter.getChapterId() + "/" + currentBook.nChapters())
 //                .setLargeIcon(currentBook.getImageBitmap())
 //                .setTicker(currentBook.getTitle() + "\n" + currentBook.fakeAuthor())
-                        // actions
+                // actions
                 .addAction(android.R.drawable.ic_media_next, "TEXT", pendingIntentText)
                 .addAction(android.R.drawable.ic_media_previous, "AUDIO", pendingIntentAudio)
                 .build();
@@ -498,13 +491,18 @@ public class MainActivity extends AppCompatActivity {
         mNotificationManager.notify(2, notification);
     }
 
-    private void removeLyricNotification() {
+    private void removeTextNotification() {
         mNotificationManager.cancel(2);
     }
 
     private void removeMediaNotification() {
         mNotificationManager.cancel(1);
     }
+
+    private void hideNotifications() {
+        MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+    }
+
 
     // Whatsapp
 
@@ -515,9 +513,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (intent.getBooleanExtra("fromNotification", false)) {
 
-            // cerramos las notificaciones
-            Intent it = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
-            MainActivity.this.sendBroadcast(it);
+            hideNotifications();
 
             // Enviar a Whatsapp
             try {
@@ -563,9 +559,10 @@ public class MainActivity extends AppCompatActivity {
         Intent intentHome = new Intent(getApplicationContext(), MainActivity.class);
         intentHome.putExtra("fromNotification", true);
         intentHome.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        intentHome.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intentHome.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intentHome);
 
+//        https://blog.akquinet.de/2010/04/15/android-activites-and-tasks-series-intent-flags/
     }
 
     public void shareLyricWhatsapp(final boolean audio) {
@@ -600,9 +597,7 @@ public class MainActivity extends AppCompatActivity {
             whatsappIntent.putExtra(Intent.EXTRA_TEXT, text);
 
             sendWhatsappIntent(whatsappIntent);
-
         }
-
 
     }
 
@@ -623,17 +618,30 @@ public class MainActivity extends AppCompatActivity {
         private static final String UTTSILENCE = "silence";
 
         @Override
-        public void onStart(String utteranceId) {
+        public void onStart(final String utteranceId) {
             myLog.add(tag, "----> START SPEAKING: " + utteranceId);
+
 
             //Si es el chiste
             if (!(utteranceId.equals(uttsavingFile) || utteranceId.equals(UTTRISA)
                     || utteranceId.equals(UTTSILENCE) || utteranceId.equals(utils.UTTEHM))) {
 
+                myLog.add("CONT", currentChiste.getChisteId() + " | " + utteranceId);
+
+                // Marcar como contado
+                currentChiste.setContado(true);
+                currentChiste.pinInBackground(parseHelper.PINCENTENA, new SaveCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        if (e == null) {
+                            myLog.add(tag, "marcado como contado: " + utteranceId);
+                        } else myLog.error("marcondo como leido", e);
+                    }
+                });
+
                 showMediaNotification();
-                //notificación con la letra
-                showLyricsNotification();
-                isShowingLyricsNotification = true;
+                showTextNotification();
+                isShowingTextNotification = true;
             }
 
 //            runOnUiThread(new Runnable() {
@@ -647,34 +655,28 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDone(String utteranceId) {
             myLog.add(tag, "----> END SPEAKING: " + utteranceId + " forced?" + interrupted);
-            // if (utteranceId.equals(msgs)) return;
-
-            //Quitar la notificaciónde lyrics si es que
 
             if (utteranceId.equals(UTTSILENCE) || utteranceId.equals(utils.UTTEHM)) {
 
             } else if (utteranceId.equals(uttsavingFile)) {
                 myLog.add(tagW, "terminado de guardar el archivo, vamos a mandar el intent");
-                // Todo convert to mp3 before sending
 
-                //pponemos un delay a ver si lo manda entero
-//                Handler handler = new Handler(Looper.getMainLooper());
-//                handler.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-                audioawhatsapp();
-//                    }
-//                }, 2000);
+                // Ponemos un delay a ver si lo manda entero el archivo
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        audioawhatsapp();
+                    }
+                }, 3000);
 
 
             } else if (utteranceId.equals(UTTRISA)) {
                 myLog.add(tag, "Ha finalizado, " + utteranceId + " por lo que ponemos el siguiente");
-                if (isShowingLyricsNotification) {
-                    removeLyricNotification();
+                if (isShowingTextNotification) {
+                    removeTextNotification();
                 }
 
-                currentChiste.setContado(true);
-                currentChiste.pinInBackground(parseHelper.PINCENTENA);
                 playNext();
 
             } else {
