@@ -16,7 +16,7 @@ public class Chiste extends ParseObject {
         t = t.replaceAll("^(-|—|–) ?(¿|\\w+¡|)", "$2"); //al inicio con guion
         t = t.replaceAll("\\n ?(-|—|–) ?(¿|\\w+¡|)", "\n$2"); //principio de linea con guion
         t = t.replaceAll("¡", "");
-        t = t.replaceAll("(\\w+)\\n", "$1.\\n"); //punto al final de la línea
+        t = t.replaceAll("(\\w+)\\n", "$1.\n"); //punto al final de la línea
 
         t = t.replaceAll("No\\.", "No . ");
         t = t.replaceAll("no\\.", "No . ");
@@ -30,6 +30,11 @@ public class Chiste extends ParseObject {
         t = t.replaceAll("\\.\\.", ".");
         t = t.replaceAll(":\\.", ".");
         t = t.replaceAll("’", "");
+
+        t = t.replaceAll("í\u00AD", "í");
+        t = t.replaceAll("í\u0081", "Á");
+        t = t.replaceAll(":â\u0080\u0094", "");
+        t = t.replaceAll("hospital", "ospital");
 
         t = t.replaceAll("Patxi", "Páchi");
 
@@ -59,13 +64,16 @@ public class Chiste extends ParseObject {
         return getString("tipo");
     }
 
-    public String getText() {
-        return getString("texto");
-    }
-
     public String firstLine() {
         String[] parts = getText().split("\n");
         return parts[0];
+    }
+
+
+    //Versions of the text
+
+    public String getText() {
+        return getString("texto");
     }
 
     /**
@@ -77,27 +85,41 @@ public class Chiste extends ParseObject {
         return processForReading(getTextForAudio());
     }
 
+    /**
+     * para chistes que tienen una onomatopeya distinta, como los de ingluies, tienen un campo
+     * distinto
+     *
+     * @return
+     */
     String getTextForAudio() {
-        final String sonido = getString("sonido");
-        String r;
+        final String sonido = getString("sonido"); //para chistes en inglés leemos la versión onomatopeya
 
-        if (getType().toLowerCase().startsWith("nivel") && !sonido.equals("ok")) {
-            r = sonido;
-        } else {
-            r = getText();
-        }
-        return r;
+        return sonido != null && sonido != "" ? sonido : getText();
     }
 
-    public int getChisteId() {
-        return getInt("n");
-    }
-
+    /**
+     * formated para wasap, con italica
+     *
+     * @return
+     */
     public String getFormatedText() {
         String[] versos = getText().split("\n");
 
         return "_" + Chiste.joinVersos(versos, "_\n_");
     }
+
+
+
+    public int getChisteId() {
+        return getInt("n");
+    }
+
+
+    private String getTitle() {
+        return getString("titulo");
+    }
+
+    // Notificaciones
 
     public String NotifTitle() {
         StringBuilder sb = new StringBuilder();
@@ -121,10 +143,6 @@ public class Chiste extends ParseObject {
         return sb.toString();
     }
 
-    private String getTitle() {
-        return getString("titulo");
-    }
-
     public String NotifSubTitle() {
         return getType();
     }
@@ -139,5 +157,20 @@ public class Chiste extends ParseObject {
 
     public void setContado(boolean b) {
         put("contado", b);
+    }
+
+
+    // FAV
+
+    public boolean isFav() {
+        return getBoolean("favorito");
+    }
+
+    public void setFav(boolean b) {
+        put("favorito", b);
+    }
+
+    public void invertFav() {
+        setFav(!isFav());
     }
 }

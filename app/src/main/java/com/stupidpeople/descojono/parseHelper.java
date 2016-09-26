@@ -5,6 +5,7 @@ import android.widget.Toast;
 
 import com.parse.DeleteCallback;
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
@@ -174,6 +175,29 @@ public class parseHelper {
                     readedCB.onDone();
                 } else {
                     readedCB.onError(e, "on pinning as leidos");
+                }
+
+            }
+        });
+    }
+
+    /**
+     * trae el chiste anterior desde local, sino el mismo
+     *
+     * @param chisteId
+     * @return
+     */
+    public static void getPrevChiste(int chisteId, final ChisteCallback cb) {
+        ParseQuery<Chiste> q = ParseQuery.getQuery(Chiste.class);
+        q.whereEqualTo("n", chisteId - 1);
+        q.fromPin(PINCENTENA);
+        q.getFirstInBackground(new GetCallback<Chiste>() {
+            @Override
+            public void done(Chiste chiste, ParseException e) {
+                if (e == null) {
+                    cb.OnDone(chiste);
+                } else {
+                    cb.onError(e);
                 }
 
             }

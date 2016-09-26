@@ -1,13 +1,32 @@
+- el pinchar en la notificación manda un chiste, no debería
+- motor de tts.
 
-- corta el chiste EL AUDIO
-    - delay lo arregla?
-    - poner un t2?
+- para voz a vences sales "whatsapp no ha sido instalado"
+- poner el resto de imagenes
+- al apretar en notificacion envia de nuevo el chiste
+
+cuando está en wasap, hayq eu ir para atreás para llegar al "enviar a
+
+- chiste n la pantalla principal, y botones
+
+
+- comprimir para subir
+- poner en enlace en el envio
+
+
+- cuantas veces shared
+- cuantas reproducidas?
+
+- guardar on line cada fav y cada compartido, numero de repr
+
+
 
 INTENTS:
-    - si no hay ninugna, o l a propia, funciona
+    - si no hay ninugna, o la propia, funciona
     - el wasap tiene que salir de donde esté (si se esta mostrando
     -
 
+click en notificaciones mandan a la app
 
 - titulo del chiste
 

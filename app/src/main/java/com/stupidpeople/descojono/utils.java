@@ -68,25 +68,25 @@ public class utils {
         return risas.get(i);
     }
 
-    public static String getPiblicity() {
+    public static String getPublicity() {
         String res;
         if (getProbability(0.4)) {
             final ArrayList<String> publi = new ArrayList<>();
 
-            publi.add("Descarga Descojónap y serás guai como yo.");
-            publi.add("Si descargas Descojónap oirás los chistes buenos, no como esta bazofia.");
-            publi.add("Bájate Descojónap antes de que lo compre guguel.");
+            publi.add("Descarga Descojónap, y serás guai como yo.");
+            publi.add("Si descargas Descojónap, oirás los chistes buenos, no como esta bazofia.");
+            publi.add("Bájate Descojónap, antes de que lo compre guguel.");
             publi.add("Descojónap gasta mucha menos batería que el poquémoh ése.");
             publi.add("Descojónap, una de las más cutres del market.");
             publi.add("Descojónap, developt bai stupidpípol. Se nota, no?");
             publi.add("Bájate Descojónap, para que se agote este despropósito.");
-            publi.add("Llama ya y tendrás 10% de descuento. Ah, no, que es gratis.");
-            publi.add("Si descargas Descojónap me arranco con una rumba.");
+            publi.add("Descarga Descojónap, ya y tendrás 10% de descuento. Ah, no, que es gratis.");
+            publi.add("Si descargas Descojónap, me arranco con una rumba.");
             publi.add("Bájate Descojónap, o te va a salir un virus en el móvil que hasta se te van a caer los dedos.");
             publi.add("Bájate Descojónap, antes que salga pal ífon y se acabe la fiesta.");
-            publi.add("Descarga Descojónap mi niña y vamoh a echá una risa loh doh como arma que la lleva er diablo");
-            publi.add("Descarga Descojónap y te cuento unos chistes al oído, guapetón...");
-            publi.add("Descarga Descojónap ya, mecagoendié...");
+            publi.add("Descarga Descojónaap mi niña y vamoh a echá una risa loh doh como arma que la lleva er diablo");
+            publi.add("Descarga Descojónap, y te cuento unos chistes al oído, guapetón...");
+            publi.add("Descarga Descojónaap ya, mecagoendié...");
 
 
             final int i = new Random().nextInt(publi.size());
