@@ -101,15 +101,15 @@ public class parseHelper {
 
         final FindCallback<Chiste> findCallback = new FindCallback<Chiste>() {
             @Override
-            public void done(List<Chiste> objects, ParseException e) {
+            public void done(final List<Chiste> chistes, ParseException e) {
                 if (e == null) {
 
                     //3. Los guardamos en local
-                    ParseObject.pinAllInBackground(PINCENTENA, objects, new SaveCallback() {
+                    ParseObject.pinAllInBackground(PINCENTENA, chistes, new SaveCallback() {
                         @Override
                         public void done(ParseException e) {
                             if (e == null) {
-                                cb.onDone();
+                                cb.onDone(chistes.size());
                             } else {
                                 cb.onError(e, "al borrar del pin los 100");
                             }
@@ -160,7 +160,7 @@ public class parseHelper {
      * @param chistesPreLoaded
      * @param readedCB
      */
-    public static void saveTheReaded(List<Chiste> chistesPreLoaded, final TaskCallback readedCB) {
+    public static void saveTheReaded(final List<Chiste> chistesPreLoaded, final TaskCallback readedCB) {
         myLog.add(tag, "vamos a marcar como leidos los chistes");
 
         if (chistesPreLoaded == null) {
@@ -172,7 +172,7 @@ public class parseHelper {
             @Override
             public void done(ParseException e) {
                 if (e == null) {
-                    readedCB.onDone();
+                    readedCB.onDone(chistesPreLoaded.size());
                 } else {
                     readedCB.onError(e, "on pinning as leidos");
                 }

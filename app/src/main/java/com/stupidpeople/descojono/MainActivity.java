@@ -25,6 +25,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     private static final String PREV = "prev";
     private static final String AGAIN = "again";
-    private static final String LOVE = "next";
+    private static final String LOVE = "love";
     private static final String STOP = "stop";
 
     private static final String SHARETEXT = "shareText";
@@ -54,25 +55,29 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private static final String UTTRISA = "risa";
     private static final int REQUEST_WRITE_PERMISSION = 789;
     private static final String tagError = "err";
-    //    private File fileTTS;
-    //TODO poner el resto de animals y reducir el tamñao (compresion de imaent)
     final int[] animalImages = {R.drawable.ic_01_foca, R.drawable.ic_02_burro, R.drawable.ic_03_panda,
             R.drawable.ic_04_chimp, R.drawable.ic_05_orangutanes, R.drawable.ic_06_orangutan_blnaco,
             R.drawable.ic_07_leon, R.drawable.ic_08_caballo, R.drawable.ic_09_tiburon, R.drawable.ic_10_perro,
-            R.drawable.ic_24_mono_riendo};
+            R.drawable.ic_11_buho, R.drawable.ic_12_perro2, R.drawable.ic_13_gato, R.drawable.ic_14_cabra,
+            R.drawable.ic_15_cheeta, R.drawable.ic_16_morsa, R.drawable.ic_17_chimp_hand, R.drawable.ic_18_dog_serious,
+            R.drawable.ic_19_nutria, R.drawable.ic_20_elephant, R.drawable.ic_21_rana, R.drawable.ic_22_orangutan2,
+            R.drawable.ic_23_morsa2, R.drawable.ic_24_mono_riendo};
     final private String samsungEngine = "com.samsung.SMT";
     TextToSpeech t1;
     private SharedPreferences settings;
+    //Tags
     private String tag = "mhp";
     private String tagW = "WAS";
     private String tag2 = "ACT";
+
+    //others
     private List<Chiste> chistesPreLoaded;
     private boolean interrupted = false;
     private int iBuffer = 0;
     private int nextQueueMode;
     private NotificationManager mNotificationManager;
     private BroadcastReceiver eventsReceiver;
-    private TextView txtChiste;
+
     private Chiste currentChiste;
     private boolean isShowingTextNotification = false;
     private String destFileName;
@@ -80,6 +85,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private Intent mIntentWhatsApp;
     private int centena;
     private String textToSintetize;
+
+    // UI
+    private TextView txtChiste;
+    private ImageButton btnPrev;
+    private ImageButton btnStopPlay;
+    private ImageButton btnNext;
+    private ImageButton btnLike;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +107,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         settings = getPreferences(MODE_PRIVATE);
         centena = settings.getInt(PREFS_CURRENT_CENTENA, 0);
 
+        // UI
         txtChiste = (TextView) findViewById(R.id.txtchiste);
+        btnPrev = (ImageButton) findViewById(R.id.btnPrev);
+        btnStopPlay = (ImageButton) findViewById(R.id.btnStopPlay);
+        btnNext = (ImageButton) findViewById(R.id.btnNext);
+        btnLike = (ImageButton) findViewById(R.id.btnLove);
 
         mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -165,12 +182,21 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
     private void importaYCuenta() {
         parseHelper.importChistes(centena, this, new TaskCallback() {
             @Override
-            public void onDone() {
-                myLog.add("IMP", "se han traido y guardado 100 chistes de centena " + centena);
-                centena++;
-                settings.edit().putInt(PREFS_CURRENT_CENTENA, centena).commit();
+            public void onDone(int size) {
+                myLog.add("IMP", "se han traido y guardado " + size + " chistes de centena " + centena);
 
-                cuentaDesdeLocal();
+                if (size > 0) {
+                    centena++;
+                    settings.edit().putInt(PREFS_CURRENT_CENTENA, centena).commit();
+
+                    cuentaDesdeLocal();
+                } else {
+
+                    myLog.add(tag, "***Se han contado ya todos, empezamos de nuevo");
+                    centena = 0;
+                    settings.edit().putInt(PREFS_CURRENT_CENTENA, centena).commit();
+                    importaYCuenta();
+                }
 
             }
 
@@ -298,6 +324,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     // Buttons
 
+    private void callar() {
+        interrupted = true;
+        t1.stop();
+    }
+
     public void onClickPrev(View view) {
         callar();
 
@@ -308,9 +339,14 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         }
     }
 
-    private void callar() {
-        interrupted = true;
-        t1.stop();
+    public void onClickStopPlay(View view) {
+        if (t1.isSpeaking()) t1.stop();
+        else playCurrentChiste();
+    }
+
+    public void onClickNext(View view) {
+        callar();
+        playNext();
     }
 
     public void onClickAgain(View view) {
@@ -321,7 +357,17 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
     public void onClickLove(View view) {
         currentChiste.invertFav();
-        showMediaNotification(); //para actualizar el corazon
+
+        //para actualizar el corazon
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                int imgHeart = currentChiste.isFav() ? R.drawable.ic_favorite_white_24dp
+                        : R.drawable.ic_favorite_border_white_24dp;
+                btnLike.setImageResource(imgHeart);
+            }
+        });
+        showMediaNotification();
 
         currentChiste.pinInBackground(parseHelper.PINCENTENA);
 
@@ -423,7 +469,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
                 .setStyle(new android.support.v4.app.NotificationCompat.BigTextStyle()
                         .bigText(currentChiste.getText())
-                        .setBigContentTitle(currentChiste.firstLine()))
+                        .setBigContentTitle(currentChiste.getType()))
                 .setShowWhen(false)
 //                .setDeleteIntent(stopPendingIntent)
                 .setContentTitle(currentChiste.getType())
@@ -469,13 +515,14 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         if (intent.getBooleanExtra("fromNotification", false)) {
 
+            myLog.add(tagW, "********onnew intent:mINtentswatsapp=" + mIntentWhatsApp.toString());
             hideNotifications();
 
             // Enviar a Whatsapp
             try {
                 MainActivity.this.startActivity(mIntentWhatsApp);
+
             } catch (ActivityNotFoundException ex) {
-                //todo dibujos para botones de notif
                 String text = "Whatsapp have not been installed.";
                 Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
                 myLog.add(tagError, text + ex.getLocalizedMessage());
@@ -513,14 +560,13 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         if (requestCode == REQUEST_WRITE_PERMISSION && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             sintetizeToFile(textToSintetize);
-            ;
         }
     }
 
     private void sendWhatsappIntent(Intent whatsappIntent) {
-        myLog.add(tagW, "sending wasap intent");
 
         mIntentWhatsApp = whatsappIntent;
+        myLog.add(tagW, "sending wasap intent:" + mIntentWhatsApp.toString());
 
         startActivity(getIntentHome());
     }
@@ -542,8 +588,8 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         if (audio) {
             callar();
 
-            textToSintetize = currentChiste.getTextForAudio() + " " + utils.getFraseDive() +
-                    " " + utils.getPublicity();
+            textToSintetize = currentChiste.getTextForAudio() + "...\n" + utils.getFraseDive() +
+                    "...\n " + utils.getPublicity();
 
             myLog.add(tagW, "testo para enviar a ws:" + textToSintetize);
 
@@ -597,12 +643,21 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
 
         Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
         whatsappIntent.setPackage("com.whatsapp");
+        whatsappIntent.setType("audio/*");
         whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
         whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         whatsappIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
 //        startActivity(Intent.createChooser(whatsappIntent, "Share Sound File"));
         sendWhatsappIntent(whatsappIntent);
+    }
+
+    public void onClickWsText(View view) {
+        shareChisteWhatsapp(false);
+    }
+
+    public void onClickWsAudio(View view) {
+        shareChisteWhatsapp(true);
     }
 
     // Handlers
@@ -615,7 +670,7 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
         public void onStart(final String utteranceId) {
             myLog.add(tag, "----> START SPEAKING: " + utteranceId);
 
-            Uri uri = Uri.parse(destFileName);
+//            Uri uri = Uri.parse(destFileName);
 
             //Si es el chiste
             if (!(utteranceId.equals(uttsavingFile) || utteranceId.equals(UTTRISA)
@@ -628,6 +683,11 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     @Override
                     public void run() {
                         txtChiste.setText(currentChiste.getText());
+                        btnStopPlay.setImageResource(R.drawable.ic_stop_white_24dp);
+                        int imgHeart = currentChiste.isFav() ? R.drawable.ic_favorite_white_24dp
+                                : R.drawable.ic_favorite_border_white_24dp;
+                        btnLike.setImageResource(imgHeart);
+
                     }
                 });
 
@@ -661,12 +721,20 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
             if (interrupted) {
                 myLog.add(tag, "se ha interrumpido, no ponemos otro");
                 interrupted = false;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        btnStopPlay.setImageResource(R.drawable.ic_play_arrow_white_24dp);
+                    }
+                });
                 return;
             }
 
 
             if (utteranceId.equals(UTTSILENCE) || utteranceId.equals(utils.UTTEHM)) {
 
+
+                // Saving file
             } else if (utteranceId.equals(uttsavingFile)) {
                 myLog.add(tagW, "terminado de guardar el archivo, vamos a mandar el intent");
 
@@ -692,6 +760,12 @@ public class MainActivity extends AppCompatActivity implements ActivityCompat.On
                     removeTextNotification();
                 }
 
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        btnStopPlay.setImageResource(R.drawable.ic_play_arrow_white_24dp);
+                    }
+                });
                 playNext();
 
             }

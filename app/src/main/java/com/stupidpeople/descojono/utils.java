@@ -24,7 +24,6 @@ public class utils {
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
         boolean b = netInfo != null && netInfo.isConnectedOrConnecting();
-        myLog.add("varios", "Checking connectivity: " + b);
 
         return b;
     }
@@ -83,8 +82,8 @@ public class utils {
             publi.add("Descarga Descojónap, ya y tendrás 10% de descuento. Ah, no, que es gratis.");
             publi.add("Si descargas Descojónap, me arranco con una rumba.");
             publi.add("Bájate Descojónap, o te va a salir un virus en el móvil que hasta se te van a caer los dedos.");
-            publi.add("Bájate Descojónap, antes que salga pal ífon y se acabe la fiesta.");
-            publi.add("Descarga Descojónaap mi niña y vamoh a echá una risa loh doh como arma que la lleva er diablo");
+            publi.add("Bájate Descojónap, antes que salga pal ífon y se acabe la fiesta...");
+            publi.add("Descarga Descojónaap mi niña y vamoh a echá una risa loh doh como arma que la lleva er diablo..");
             publi.add("Descarga Descojónap, y te cuento unos chistes al oído, guapetón...");
             publi.add("Descarga Descojónaap ya, mecagoendié...");
 
@@ -94,6 +93,6 @@ public class utils {
         } else {
             res = "";
         }
-        return res;
+        return res + "..........";
     }
 }

@@ -16,7 +16,7 @@ public class Chiste extends ParseObject {
         t = t.replaceAll("^(-|—|–) ?(¿|\\w+¡|)", "$2"); //al inicio con guion
         t = t.replaceAll("\\n ?(-|—|–) ?(¿|\\w+¡|)", "\n$2"); //principio de linea con guion
         t = t.replaceAll("¡", "");
-        t = t.replaceAll("(\\w+)\\n", "$1.\n"); //punto al final de la línea
+        t = t.replaceAll("(\\w+)\\n", "$1\\.\n"); //punto al final de la línea
 
         t = t.replaceAll("No\\.", "No . ");
         t = t.replaceAll("no\\.", "No . ");
@@ -35,6 +35,7 @@ public class Chiste extends ParseObject {
         t = t.replaceAll("í\u0081", "Á");
         t = t.replaceAll(":â\u0080\u0094", "");
         t = t.replaceAll("hospital", "ospital");
+        t = t.replaceAll("í¼", "ü");
 
         t = t.replaceAll("Patxi", "Páchi");
 
@@ -107,8 +108,6 @@ public class Chiste extends ParseObject {
 
         return "_" + Chiste.joinVersos(versos, "_\n_");
     }
-
-
 
     public int getChisteId() {
         return getInt("n");

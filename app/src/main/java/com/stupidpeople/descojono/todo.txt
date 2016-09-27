@@ -1,24 +1,20 @@
-- el pinchar en la notificación manda un chiste, no debería
-- motor de tts.
 
-- para voz a vences sales "whatsapp no ha sido instalado"
-- poner el resto de imagenes
+-------
+
+- motor de tts.
+ a veces no queda en italica en wasap, poruqe hay un espacio
 - al apretar en notificacion envia de nuevo el chiste
+
 
 cuando está en wasap, hayq eu ir para atreás para llegar al "enviar a
 
 - chiste n la pantalla principal, y botones
 
-
-- comprimir para subir
-- poner en enlace en el envio
-
-
+----- v.0.2
+- poner en web los likes y demases(cuales se han adelantado, reproducido)
 - cuantas veces shared
-- cuantas reproducidas?
-
-- guardar on line cada fav y cada compartido, numero de repr
-
+- poner en enlace en el envio
+- mostrar estadistica de chiste
 
 
 INTENTS:
